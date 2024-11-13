@@ -1,6 +1,15 @@
 import dataclasses
 import typing
 
+from typing_extensions import TypeAlias
+
+from src.domain.entities import AntithesisArticle, SynthesisArticle, ThesisArticle
+from src.domain.value_objects import RelationType
+
+AllThesises: TypeAlias = typing.Union[
+    ThesisArticle, AntithesisArticle, SynthesisArticle
+]
+
 
 @dataclasses.dataclass
 class _BasePublishArticleInputDTO:
@@ -33,4 +42,31 @@ class PublishArticleOutputDTO:
 @dataclasses.dataclass
 class RateArticleInputDTO:
     article_id: int
-    type: typing.Literal["positive", "negative"]
+    is_positive: bool
+
+
+@dataclasses.dataclass
+class Relation:
+    to_id: int
+    type: RelationType
+
+
+@dataclasses.dataclass
+class CreateArticle(_BasePublishArticleInputDTO):
+    relations: list[Relation]
+
+
+@dataclasses.dataclass
+class ViewArticleRelation:
+    to_id: int
+    to_name: str
+    type: RelationType
+
+
+@dataclasses.dataclass
+class GetArticleOutputDTO:
+    id: int
+    author_id: int
+    title: str
+    text: str
+    relations: list[ViewArticleRelation]

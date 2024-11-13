@@ -2,7 +2,7 @@ import dataclasses
 
 
 @dataclasses.dataclass
-class _BaseArticle:
+class ThesisArticle:
     id: int
     author_id: int
     title: str
@@ -11,16 +11,11 @@ class _BaseArticle:
 
 
 @dataclasses.dataclass
-class ThesisArticle(_BaseArticle):
-    pass
-
-
-@dataclasses.dataclass
-class AntithesisArticle(_BaseArticle):
+class AntithesisArticle(ThesisArticle):
     refer_to: int
 
 
 @dataclasses.dataclass
-class SynthesisArticle(_BaseArticle):
+class SynthesisArticle(ThesisArticle):
     thesis_id: int
     antithesis_id: int
