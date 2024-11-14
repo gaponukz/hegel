@@ -34,8 +34,10 @@ class PublishSynthesis(PublishSynthesisArticleUseCase):
                 title=dto.title,
                 text=dto.text,
                 relations=[
-                    Relation(to_id=dto.thesis_id, type=RelationType.SYNTHESIS),
-                    Relation(to_id=dto.antithesis_id, type=RelationType.SYNTHESIS),
+                    Relation(to_id=dto.thesis_id, type=RelationType.THESIS_SYNTHESIS),
+                    Relation(
+                        to_id=dto.antithesis_id, type=RelationType.ANTITHESIS_SYNTHESIS
+                    ),
                 ],
             )
         )

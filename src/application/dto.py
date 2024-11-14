@@ -4,7 +4,7 @@ import typing
 from typing_extensions import TypeAlias
 
 from src.domain.entities import AntithesisArticle, SynthesisArticle, ThesisArticle
-from src.domain.value_objects import RelationType
+from src.domain.value_objects import ArticleType, RelationType
 
 AllThesises: TypeAlias = typing.Union[
     ThesisArticle, AntithesisArticle, SynthesisArticle
@@ -66,6 +66,7 @@ class ViewArticleRelation:
 @dataclasses.dataclass
 class GetArticleOutputDTO:
     id: int
+    type: ArticleType
     author_id: int
     title: str
     text: str
