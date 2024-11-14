@@ -5,18 +5,18 @@ from src.application.dto import (
     Relation,
 )
 from src.application.persistent import UnitOfWork
-from src.application.usecases import PublishAntithesisArticle
+from src.application.usecases import PublishAntithesisArticleUseCase
 from src.domain.value_objects import RelationType
 
 
-class PublishAntithesis(PublishAntithesisArticle):
+class PublishAntithesis(PublishAntithesisArticleUseCase):
     def __init__(self, uow: UnitOfWork):
         self._uow = uow
 
-    def __call__(
+    async def __call__(
         self, dto: PublishAntithesisArticleInputDTO
     ) -> PublishArticleOutputDTO:
-        article_id = self._uow.repository.add_article(
+        article_id = await self._uow.repository.add_article(
             CreateArticle(
                 author_id=dto.author_id,
                 title=dto.title,

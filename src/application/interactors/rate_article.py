@@ -7,9 +7,9 @@ class RateArticle(RateArticleUseCase):
     def __init__(self, uow: UnitOfWork):
         self._uow = uow
 
-    def __call__(self, dto: RateArticleInputDTO) -> None:
-        with self._uow as uow:
-            article = uow.repository.get_article(dto.article_id)
+    async def __call__(self, dto: RateArticleInputDTO) -> None:
+        async with self._uow as uow:
+            article = await uow.repository.get_article(dto.article_id)
             article.rating += 1 if dto.is_positive else -1
 
-            uow.repository.update_article(article)
+            await uow.repository.update_article(article)

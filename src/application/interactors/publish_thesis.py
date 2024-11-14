@@ -4,15 +4,17 @@ from src.application.dto import (
     PublishThesisArticleInputDTO,
 )
 from src.application.persistent import UnitOfWork
-from src.application.usecases import PublishThesisArticle
+from src.application.usecases import PublishThesisArticleUseCase
 
 
-class PublishThesis(PublishThesisArticle):
+class PublishThesis(PublishThesisArticleUseCase):
     def __init__(self, uow: UnitOfWork):
         self._uow = uow
 
-    def __call__(self, dto: PublishThesisArticleInputDTO) -> PublishArticleOutputDTO:
-        article_id = self._uow.repository.add_article(
+    async def __call__(
+        self, dto: PublishThesisArticleInputDTO
+    ) -> PublishArticleOutputDTO:
+        article_id = await self._uow.repository.add_article(
             CreateArticle(
                 author_id=dto.author_id,
                 title=dto.title,

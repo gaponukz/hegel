@@ -9,8 +9,8 @@ class PublishAntithesis(GetArticleUseCase):
     def __init__(self, uow: UnitOfWork):
         self._uow = uow
 
-    def __call__(self, article_id: int) -> GetArticleOutputDTO:
-        article = self._uow.repository.get_article(article_id)
+    async def __call__(self, article_id: int) -> GetArticleOutputDTO:
+        article = await self._uow.repository.get_article(article_id)
         output = GetArticleOutputDTO(
             id=article.id,
             author_id=article.author_id,
@@ -23,7 +23,7 @@ class PublishAntithesis(GetArticleUseCase):
             return output
 
         if type(article) == AntithesisArticle:
-            base = self._uow.repository.get_article(article.refer_to)
+            base = await self._uow.repository.get_article(article.refer_to)
             output.relations.append(
                 ViewArticleRelation(
                     to_id=base.id,
@@ -33,8 +33,8 @@ class PublishAntithesis(GetArticleUseCase):
             )
 
         elif type(article) == SynthesisArticle:
-            thesis = self._uow.repository.get_article(article.thesis_id)
-            antithesis = self._uow.repository.get_article(article.antithesis_id)
+            thesis = await self._uow.repository.get_article(article.thesis_id)
+            antithesis = await self._uow.repository.get_article(article.antithesis_id)
 
             for base in [thesis, antithesis]:
                 output.relations.append(

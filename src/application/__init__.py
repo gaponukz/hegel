@@ -5,5 +5,5 @@ OutputDTO = typing.TypeVar("OutputDTO", covariant=True)
 
 
 class UseCase(typing.Protocol[InputDTO, OutputDTO]):
-    def __call__(self, data: InputDTO) -> OutputDTO:
+    async def __call__(self, data: InputDTO) -> OutputDTO:
         raise NotImplementedError
