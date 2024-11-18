@@ -25,29 +25,29 @@ class PublishThesisArticleInputDTO(_BasePublishArticleInputDTO):
 
 @dataclasses.dataclass
 class PublishAntithesisArticleInputDTO(_BasePublishArticleInputDTO):
-    refer_to: int
+    refer_to: str
 
 
 @dataclasses.dataclass
 class PublishSynthesisArticleInputDTO(_BasePublishArticleInputDTO):
-    thesis_id: int
-    antithesis_id: int
+    thesis_id: str
+    antithesis_id: str
 
 
 @dataclasses.dataclass
 class PublishArticleOutputDTO:
-    id: int
+    id: str
 
 
 @dataclasses.dataclass
 class RateArticleInputDTO:
-    article_id: int
+    article_id: str
     is_positive: bool
 
 
 @dataclasses.dataclass
 class Relation:
-    to_id: int
+    to_id: str
     type: RelationType
 
 
@@ -57,15 +57,21 @@ class CreateArticle(_BasePublishArticleInputDTO):
 
 
 @dataclasses.dataclass
+class GetArticleInputDTO:
+    article_id: str
+    article_type: ArticleType
+
+
+@dataclasses.dataclass
 class ViewArticleRelation:
-    to_id: int
+    to_id: str
     to_name: str
     type: RelationType
 
 
 @dataclasses.dataclass
 class GetArticleOutputDTO:
-    id: int
+    id: str
     type: ArticleType
     author_id: int
     title: str
