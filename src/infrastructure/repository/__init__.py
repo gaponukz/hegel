@@ -25,25 +25,23 @@ class Neo4jThesisRepository(DialecticalGraph):
             "author_id": dto.author_id,
         }
 
-        query = queries.CREATE_THESIS
         article_type = self._get_article_type_from_relations(dto.relations)
 
         if article_type == ArticleType.THESIS:
             query = queries.CREATE_THESIS
 
         elif article_type == ArticleType.ANTITHESIS:
-            kwargs["thesis_id"] = dto.relations[0].to_id
             query = queries.CREATE_ANTITHESIS
+            kwargs["thesis_id"] = dto.relations[0].to_id
 
         elif article_type == ArticleType.SYNTHESIS:
+            query = queries.CREATE_SYNTHESIS
             kwargs["thesis_id"] = self._get_thesis_id_from_synthesis(
                 dto.relations, RelationType.THESIS_SYNTHESIS
             )
             kwargs["antithesis_id"] = self._get_thesis_id_from_synthesis(
                 dto.relations, RelationType.ANTITHESIS_SYNTHESIS
             )
-
-            query = queries.CREATE_SYNTHESIS
 
         result = await self._session.run(query, **kwargs)
         record = await result.single(strict=True)
