@@ -8,4 +8,4 @@ class GetArticle(GetArticleUseCase):
         self._uow = uow
 
     async def __call__(self, dto: GetArticleInputDTO) -> GetArticleOutputDTO:
-        return await self._uow.repository.get_article(dto)
+        return await self._uow.repository.get_article_for_view(dto)

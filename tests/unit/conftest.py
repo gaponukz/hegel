@@ -1,12 +1,19 @@
 import dataclasses
+import uuid
 
 import pytest
 
-from src.application.dto import AllThesises, CreateArticle
+from src.application.dto import (
+    AllThesises,
+    CreateArticle,
+    GetArticleInputDTO,
+    GetArticleOutputDTO,
+    ViewArticleRelation,
+)
 from src.application.errors import ApplicationError
 from src.application.persistent import DialecticalGraph, UnitOfWork
 from src.domain.entities import AntithesisArticle, SynthesisArticle, ThesisArticle
-from src.domain.value_objects import RelationType
+from src.domain.value_objects import ArticleType, RelationType
 
 
 @dataclasses.dataclass
@@ -16,9 +23,9 @@ class _ThesiseDTO(CreateArticle):
 
 class MemoryDialecticalGraphDialecticalGraph(DialecticalGraph):
     def __init__(self):
-        self._data: dict[int, _ThesiseDTO] = {}
+        self._data: dict[str, _ThesiseDTO] = {}
 
-    async def add_article(self, dto: CreateArticle) -> int:
+    async def add_article(self, dto: CreateArticle) -> str:
         article = _ThesiseDTO(
             author_id=dto.author_id,
             title=dto.title,
@@ -26,13 +33,13 @@ class MemoryDialecticalGraphDialecticalGraph(DialecticalGraph):
             relations=dto.relations,
             rating=0,
         )
-        article_id = id(article)
+        article_id = str(uuid.uuid4())
 
         self._data[article_id] = article
 
         return article_id
 
-    async def get_article(self, article_id: int) -> AllThesises:
+    async def get_article(self, article_id: str) -> AllThesises:
         article = self._data.get(article_id)
 
         if article is None:
@@ -46,18 +53,14 @@ class MemoryDialecticalGraphDialecticalGraph(DialecticalGraph):
             "rating": article.rating,
         }
 
-        if not article.relations:
+        if type(article) == ThesisArticle:
             return ThesisArticle(**kwargs)  # type: ignore
 
-        if article.relations[0].type == RelationType.ANTITHESIS:
+        elif type(article) == AntithesisArticle:
             kwargs["refer_to"] = article.relations[0].to_id
             return AntithesisArticle(**kwargs)  # type: ignore
 
-        elif all(
-            rel.type
-            in [RelationType.THESIS_SYNTHESIS, RelationType.ANTITHESIS_SYNTHESIS]
-            for rel in article.relations
-        ):
+        elif type(article) == SynthesisArticle:
             for rel in article.relations:
                 if rel.type == RelationType.THESIS_SYNTHESIS:
                     kwargs["thesis_id"] = rel.to_id
@@ -69,6 +72,54 @@ class MemoryDialecticalGraphDialecticalGraph(DialecticalGraph):
 
         raise ApplicationError(f"Article(id={article_id}) has unknown type")
 
+    async def get_article_for_view(
+        self, dto: GetArticleInputDTO
+    ) -> GetArticleOutputDTO:
+        article = await self.get_article(dto.article_id)
+        output = GetArticleOutputDTO(
+            id=article.id,
+            type=dto.article_type,
+            author_id=article.author_id,
+            title=article.title,
+            text=article.text,
+            relations=[],
+        )
+
+        if dto.article_type == ArticleType.THESIS:
+            return output
+
+        if isinstance(article, AntithesisArticle):
+            thesis = await self.get_article(article_id=article.refer_to)
+            output.relations.append(
+                ViewArticleRelation(
+                    to_id=thesis.id,
+                    to_name=thesis.title,
+                    type=RelationType.ANTITHESIS,
+                )
+            )
+
+        elif isinstance(article, SynthesisArticle):
+            thesis = await self.get_article(article_id=article.thesis_id)
+            antithesis = await self.get_article(article_id=article.antithesis_id)
+
+            output.relations.append(
+                ViewArticleRelation(
+                    to_id=thesis.id,
+                    to_name=thesis.title,
+                    type=RelationType.THESIS_SYNTHESIS,
+                )
+            )
+
+            output.relations.append(
+                ViewArticleRelation(
+                    to_id=antithesis.id,
+                    to_name=antithesis.title,
+                    type=RelationType.ANTITHESIS_SYNTHESIS,
+                )
+            )
+
+        return output
+
     async def update_article(self, thesis: AllThesises) -> None:
         article = self._data.get(thesis.id)
 
@@ -77,7 +128,7 @@ class MemoryDialecticalGraphDialecticalGraph(DialecticalGraph):
 
         article.rating = thesis.rating
 
-    async def is_antithesis(self, thesis_id: int, antithesis_id: int) -> bool:
+    async def is_antithesis(self, thesis_id: str, antithesis_id: str) -> bool:
         antithesis = self._data.get(antithesis_id)
 
         if antithesis is None:

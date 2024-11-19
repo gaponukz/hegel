@@ -2,9 +2,16 @@ import typing
 
 from neo4j import AsyncSession, AsyncTransaction
 
-from src.application.dto import AllThesises, CreateArticle, GetArticleInputDTO
+from src.application.dto import (
+    AllThesises,
+    CreateArticle,
+    GetArticleInputDTO,
+    GetArticleOutputDTO,
+    Relation,
+)
 from src.application.persistent import DialecticalGraph, UnitOfWork
-from src.domain.value_objects import RelationType
+from src.domain.value_objects import ArticleType, RelationType
+from src.infrastructure.repository import queries
 
 
 class Neo4jThesisRepository(DialecticalGraph):
@@ -18,37 +25,37 @@ class Neo4jThesisRepository(DialecticalGraph):
             "author_id": dto.author_id,
         }
 
-        if not dto.relations:
-            query = "CREATE (t:Thesis {uuid: randomUUID(), title: $title, text: $text, author_id: $author_id, rating: 0}) RETURN t.uuid AS thesis_id"
+        query = queries.CREATE_THESIS
+        article_type = self._get_article_type_from_relations(dto.relations)
 
-        elif (
-            len(dto.relations) == 1 and dto.relations[0].type == RelationType.ANTITHESIS
-        ):
+        if article_type == ArticleType.THESIS:
+            query = queries.CREATE_THESIS
+
+        elif article_type == ArticleType.ANTITHESIS:
             kwargs["thesis_id"] = dto.relations[0].to_id
-            query = "MATCH (t:Thesis) WHERE t.uuid = $thesis_id CREATE (at:Thesis {uuid: randomUUID(), title: $title, text: $text, author_id: $author_id, rating: 0})-[:ANTITHESIS]->(t) RETURN at.uuid AS thesis_id"
+            query = queries.CREATE_ANTITHESIS
 
-        elif len(dto.relations) == 2 and all(
-            RelationType.is_synthesis(rel.type) for rel in dto.relations
-        ):
-            kwargs["thesis_id"] = [
-                rel
-                for rel in dto.relations
-                if rel.type == RelationType.THESIS_SYNTHESIS
-            ][0].to_id
-            kwargs["antithesis_id"] = [
-                rel
-                for rel in dto.relations
-                if rel.type == RelationType.ANTITHESIS_SYNTHESIS
-            ][0].to_id
+        elif article_type == ArticleType.SYNTHESIS:
+            kwargs["thesis_id"] = self._get_thesis_id_from_synthesis(
+                dto.relations, RelationType.THESIS_SYNTHESIS
+            )
+            kwargs["antithesis_id"] = self._get_thesis_id_from_synthesis(
+                dto.relations, RelationType.ANTITHESIS_SYNTHESIS
+            )
 
-            query = "MATCH (t:Thesis), (at:Thesis) WHERE t.uuid = $thesis_id AND at.uuid = $antithesis_id CREATE (st:Thesis {uuid: randomUUID(), title: $title, text: $text, author_id: $author_id, rating: 0})-[:THESIS_SYNTHESIS]->(t), (st)-[:ANTITHESIS_SYNTHESIS]->(at) RETURN st.uuid AS thesis_id"
+            query = queries.CREATE_SYNTHESIS
 
         result = await self._session.run(query, **kwargs)
         record = await result.single(strict=True)
 
         return record["thesis_id"]
 
-    async def get_article(self, dto: GetArticleInputDTO) -> AllThesises:
+    async def get_article(self, article_id: str) -> AllThesises:
+        raise NotImplementedError
+
+    async def get_article_for_view(
+        self, dto: GetArticleInputDTO
+    ) -> GetArticleOutputDTO:
         raise NotImplementedError
 
     async def update_article(self, thesis: AllThesises) -> None:
@@ -56,6 +63,23 @@ class Neo4jThesisRepository(DialecticalGraph):
 
     async def is_antithesis(self, thesis_id: str, antithesis_id: str) -> bool:
         raise NotImplementedError
+
+    @classmethod
+    def _get_article_type_from_relations(cls, relations: list[Relation]) -> ArticleType:
+        if not relations:
+            return ArticleType.THESIS
+
+        if len(relations) == 1 and relations[0].type == RelationType.ANTITHESIS:
+            return ArticleType.ANTITHESIS
+
+        return ArticleType.SYNTHESIS
+
+    @classmethod
+    def _get_thesis_id_from_synthesis(
+        cls, relations: list[Relation], _type: RelationType
+    ) -> str:
+        assert _type != RelationType.ANTITHESIS
+        return [rel for rel in relations if rel.type == _type][0].to_id
 
 
 class Neo4jThesisUnitOfWork(UnitOfWork):

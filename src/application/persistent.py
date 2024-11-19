@@ -2,13 +2,22 @@ from __future__ import annotations
 
 import typing
 
-from src.application.dto import AllThesises, CreateArticle, GetArticleInputDTO
+from src.application.dto import (
+    AllThesises,
+    CreateArticle,
+    GetArticleInputDTO,
+    GetArticleOutputDTO,
+)
 
 
 class DialecticalGraph(typing.Protocol):
     async def add_article(self, dto: CreateArticle) -> str: ...
 
-    async def get_article(self, dto: GetArticleInputDTO) -> AllThesises: ...
+    async def get_article(self, article_id: str) -> AllThesises: ...
+
+    async def get_article_for_view(
+        self, dto: GetArticleInputDTO
+    ) -> GetArticleOutputDTO: ...
 
     async def update_article(self, thesis: AllThesises) -> None: ...
 

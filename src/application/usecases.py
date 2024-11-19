@@ -1,5 +1,6 @@
 from src.application import UseCase
 from src.application.dto import (
+    GetArticleInputDTO,
     GetArticleOutputDTO,
     PublishAntithesisArticleInputDTO,
     PublishArticleOutputDTO,
@@ -31,5 +32,5 @@ class RateArticleUseCase(UseCase[RateArticleInputDTO, None]):
     pass
 
 
-class GetArticleUseCase(UseCase[int, GetArticleOutputDTO]):
+class GetArticleUseCase(UseCase[GetArticleInputDTO, GetArticleOutputDTO]):
     pass
