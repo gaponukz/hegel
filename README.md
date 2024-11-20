@@ -1,6 +1,8 @@
 # hegel: dialectic app
 
-## Overview
+<p align="center" width="100%">
+    <img width="350" alt="image" src="https://github.com/user-attachments/assets/0190ff7b-e7b9-414e-ac26-f558109a4c4c">
+</p>
 
 The hegel is a discussion platform designed to support structured, dialectical reasoning inspired by Hegel's triadic approach. Users can engage with each other on various topics by creating thesis, antithesis, and synthesis articles. This process encourages users to collaboratively address complex issues, explore diverse perspectives, and work toward refined solutions.
 
