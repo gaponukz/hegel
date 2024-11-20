@@ -1,4 +1,8 @@
 CREATE CONSTRAINT FOR (n:Thesis) REQUIRE n.uuid IS UNIQUE
+MERGE (:Placeholder)-[:ANTITHESIS]->(:Placeholder)
+MERGE (:Placeholder)-[:ANTITHESIS_SYNTHESIS]->(:Placeholder)
+MERGE (:Placeholder)-[:THESIS_SYNTHESIS]->(:Placeholder)
+MATCH (n:Placeholder) DETACH DELETE n
 
 // create primary thesis
 CREATE (t:Thesis {
@@ -45,6 +49,18 @@ OPTIONAL MATCH
     (selected)-[:THESIS_SYNTHESIS]->(synthesis_thesis:Thesis),
     (selected)-[:ANTITHESIS_SYNTHESIS]->(synthesis_antithesis:Thesis)
 RETURN selected, antithesis_thesis, synthesis_thesis, synthesis_antithesis
+
+// update thesis
+MATCH (t:Thesis {uuid: '{{thesis_id}}'})
+SET t.rating = '{{rating}}'
+SET t.title = '{{title}}'
+SET t.text = '{{text}}'
+WITH t RETURN CASE WHEN t IS NOT NULL THEN true ELSE false END AS exists
+
+// check antithesis relations
+RETURN EXISTS {
+    MATCH (antithesis:Thesis {uuid: $antithesis_id})-[:ANTITHESIS]->(thesis:Thesis {uuid: $thesis_id})
+} AS exists
 
 // list all, debug
 MATCH (t:Thesis) RETURN t

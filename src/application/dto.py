@@ -76,4 +76,5 @@ class GetArticleOutputDTO:
     author_id: int
     title: str
     text: str
+    rating: int
     relations: list[ViewArticleRelation]

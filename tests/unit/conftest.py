@@ -82,6 +82,7 @@ class MemoryDialecticalGraphDialecticalGraph(DialecticalGraph):
             author_id=article.author_id,
             title=article.title,
             text=article.text,
+            rating=article.rating,
             relations=[],
         )
 

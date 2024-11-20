@@ -12,9 +12,10 @@ async def main():
     session = driver.session()
     uow = Neo4jThesisUnitOfWork(session)
 
-    print(await uow.repository.get_article("d8b69a95-dedb-4d50-9a06-fb6ae52d9d96"))
-    print(await uow.repository.get_article("6bedd47f-0632-4e60-978e-431d3513ae6e"))
-    print(await uow.repository.get_article("360de613-8d08-4870-98fd-e73fa702b68f"))
+    thesis_id = "47f32608-72f0-4ccb-8eb2-dcb1c675886e"
+    antithesis_id = "ae8c20ea-f987-4d10-9aea-ba6d53fba33c"
+
+    print(await uow.repository.is_antithesis(thesis_id, antithesis_id))
 
     await session.close()
     await driver.close()

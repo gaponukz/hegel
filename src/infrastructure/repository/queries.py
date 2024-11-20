@@ -45,3 +45,17 @@ OPTIONAL MATCH
     (selected)-[:ANTITHESIS_SYNTHESIS]->(synthesis_antithesis:Thesis)
 RETURN selected, antithesis_thesis, synthesis_thesis, synthesis_antithesis
 """
+
+UPDATE_THESIS_BY_ID = """
+MATCH (t:Thesis {uuid: $thesis_id})
+SET t.rating = $rating
+SET t.title = $title
+SET t.text = $text
+WITH t RETURN CASE WHEN t IS NOT NULL THEN true ELSE false END AS exists
+"""
+
+CHECK_ANTITHESIS_RELATIONS = """
+RETURN EXISTS {
+    MATCH (antithesis:Thesis {uuid: $antithesis_id})-[:ANTITHESIS]->(thesis:Thesis {uuid: $thesis_id})
+} AS exists
+"""

@@ -8,6 +8,7 @@ from src.application.dto import (
     GetArticleInputDTO,
     GetArticleOutputDTO,
     Relation,
+    ViewArticleRelation,
 )
 from src.application.errors import ArticleNotFoundError
 from src.application.persistent import DialecticalGraph, UnitOfWork
@@ -52,9 +53,9 @@ class Neo4jThesisRepository(DialecticalGraph):
 
     async def get_article(self, article_id: str) -> AllThesises:
         result = await self._session.run(queries.GET_THESIS_BY_ID, thesis_id=article_id)
-        record = await result.single(strict=True)
+        record = await result.single()
 
-        if record["selected"] is None:
+        if record is None or record["selected"] is None:
             raise ArticleNotFoundError(article_id)
 
         kwargs, atype = self._parse_kwargs_from_record(record)
@@ -70,13 +71,81 @@ class Neo4jThesisRepository(DialecticalGraph):
     async def get_article_for_view(
         self, dto: GetArticleInputDTO
     ) -> GetArticleOutputDTO:
-        raise NotImplementedError
+        result = await self._session.run(
+            queries.GET_THESIS_BY_ID, thesis_id=dto.article_id
+        )
+        record = await result.single()
+
+        if record is None or record["selected"] is None:
+            raise ArticleNotFoundError(dto.article_id)
+
+        kwargs, atype = self._parse_kwargs_from_record(record)
+
+        if atype != dto.article_type:
+            raise ArticleNotFoundError(f"{dto.article_id}")
+
+        output = GetArticleOutputDTO(
+            id=kwargs["id"],
+            author_id=kwargs["author_id"],
+            title=kwargs["title"],
+            text=kwargs["text"],
+            rating=kwargs["rating"],
+            type=dto.article_type,
+            relations=[],
+        )
+        if dto.article_type == ArticleType.THESIS:
+            return output
+
+        if dto.article_type == ArticleType.ANTITHESIS:
+            output.relations.append(
+                ViewArticleRelation(
+                    to_id=record["antithesis_thesis"]["uuid"],
+                    to_name=record["antithesis_thesis"]["title"],
+                    type=RelationType.ANTITHESIS,
+                )
+            )
+
+        elif dto.article_type == ArticleType.SYNTHESIS:
+            output.relations.append(
+                ViewArticleRelation(
+                    to_id=record["synthesis_thesis"]["uuid"],
+                    to_name=record["synthesis_thesis"]["title"],
+                    type=RelationType.THESIS_SYNTHESIS,
+                )
+            )
+
+            output.relations.append(
+                ViewArticleRelation(
+                    to_id=record["synthesis_antithesis"]["uuid"],
+                    to_name=record["synthesis_antithesis"]["title"],
+                    type=RelationType.ANTITHESIS_SYNTHESIS,
+                )
+            )
+
+        return output
 
     async def update_article(self, thesis: AllThesises) -> None:
-        raise NotImplementedError
+        result = await self._session.run(
+            queries.UPDATE_THESIS_BY_ID,
+            thesis_id=thesis.id,
+            rating=thesis.rating,
+            text=thesis.text,
+            title=thesis.title,
+        )
+        record = await result.single()
+
+        if record is None or not record["exists"]:
+            raise ArticleNotFoundError(thesis.id)
 
     async def is_antithesis(self, thesis_id: str, antithesis_id: str) -> bool:
-        raise NotImplementedError
+        result = await self._session.run(
+            queries.CHECK_ANTITHESIS_RELATIONS,
+            thesis_id=thesis_id,
+            antithesis_id=antithesis_id,
+        )
+        record = await result.single()
+
+        return record is not None and record["exists"]
 
     @classmethod
     def _get_article_type_from_relations(cls, relations: list[Relation]) -> ArticleType:
