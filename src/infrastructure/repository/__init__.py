@@ -1,6 +1,6 @@
 import typing
 
-from neo4j import AsyncSession, AsyncTransaction
+from neo4j import AsyncSession, AsyncTransaction, Record
 
 from src.application.dto import (
     AllThesises,
@@ -9,7 +9,9 @@ from src.application.dto import (
     GetArticleOutputDTO,
     Relation,
 )
+from src.application.errors import ArticleNotFoundError
 from src.application.persistent import DialecticalGraph, UnitOfWork
+from src.domain.entities import AntithesisArticle, SynthesisArticle, ThesisArticle
 from src.domain.value_objects import ArticleType, RelationType
 from src.infrastructure.repository import queries
 
@@ -49,7 +51,21 @@ class Neo4jThesisRepository(DialecticalGraph):
         return record["thesis_id"]
 
     async def get_article(self, article_id: str) -> AllThesises:
-        raise NotImplementedError
+        result = await self._session.run(queries.GET_THESIS_BY_ID, thesis_id=article_id)
+        record = await result.single(strict=True)
+
+        if record["selected"] is None:
+            raise ArticleNotFoundError(article_id)
+
+        kwargs, atype = self._parse_kwargs_from_record(record)
+
+        cls = {
+            ArticleType.THESIS: ThesisArticle,
+            ArticleType.ANTITHESIS: AntithesisArticle,
+            ArticleType.SYNTHESIS: SynthesisArticle,
+        }[atype]
+
+        return cls(**kwargs)
 
     async def get_article_for_view(
         self, dto: GetArticleInputDTO
@@ -78,6 +94,31 @@ class Neo4jThesisRepository(DialecticalGraph):
     ) -> str:
         assert _type != RelationType.ANTITHESIS
         return [rel for rel in relations if rel.type == _type][0].to_id
+
+    @classmethod
+    def _parse_kwargs_from_record(cls, record: Record) -> tuple[dict, ArticleType]:
+        atype = ArticleType.THESIS
+        kwargs = {
+            "id": record["selected"]["uuid"],
+            "author_id": record["selected"]["author_id"],
+            "title": record["selected"]["title"],
+            "text": record["selected"]["text"],
+            "rating": record["selected"]["rating"],
+        }
+
+        if record["antithesis_thesis"] is not None:
+            atype = ArticleType.ANTITHESIS
+            kwargs["refer_to"] = record["antithesis_thesis"]["uuid"]
+
+        elif (
+            record["synthesis_thesis"] is not None
+            and record["synthesis_antithesis"] is not None
+        ):
+            atype = ArticleType.SYNTHESIS
+            kwargs["thesis_id"] = record["synthesis_thesis"]["uuid"]
+            kwargs["antithesis_id"] = record["synthesis_antithesis"]["uuid"]
+
+        return kwargs, atype
 
 
 class Neo4jThesisUnitOfWork(UnitOfWork):

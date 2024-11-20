@@ -24,7 +24,7 @@ RETURN at.uuid AS thesisId;
 
 // create synthesis, have two relations: to thesis and antithesis
 MATCH (t:Thesis), (at:Thesis)
-WHERE t.uuid = '{{thesis_id}}' 
+WHERE t.uuid = '{{thesis_id}}'
   AND at.uuid = '{{antithesis_id}}'
 CREATE (st:Thesis {
     uuid: randomUUID(),
@@ -37,29 +37,14 @@ CREATE (st:Thesis {
 (st)-[:ANTITHESIS_SYNTHESIS]->(at)
 RETURN st.uuid AS thesisId;
 
-// get thesis by id
-MATCH (thesis:Thesis)
-WHERE thesis.uuid = 'b3ed0fda-b706-44b8-b4a1-9b24359315f3'
-OPTIONAL MATCH (antithesis:Thesis)-[:ANTITHESIS]->(thesis) // (+ optional all his antithesises)
-RETURN thesis, antithesis
-
-// get antithesis by id and his parent thesis
-MATCH (antithesis:Thesis)
-WHERE antithesis.uuid = '24e0482e-efd8-457d-886c-8b09f561852f'
-MATCH (antithesis)-[:ANTITHESIS]->(thesis:Thesis)
+// get all info by id
+MATCH (selected:Thesis)
+WHERE selected.uuid = '{{thesis_id}}'
+OPTIONAL MATCH (selected)-[:ANTITHESIS]->(antithesis_thesis:Thesis)
 OPTIONAL MATCH 
-    (synthesis:Thesis)-[:ANTITHESIS_SYNTHESIS]->(antithesis), // (+ optional synthesis of them)
-    (synthesis)-[:THESIS_SYNTHESIS]->(thesis)
-RETURN thesis, antithesis, synthesis
-
-// get synthesis by id with his thesis and antithesis
-MATCH (synthesis:Thesis)
-WHERE synthesis.uuid = '76c97c32-81ba-4487-93cc-b4f231815c7b'
-MATCH 
-    (synthesis)-[:THESIS_SYNTHESIS]->(thesis:Thesis),
-    (synthesis)-[:ANTITHESIS_SYNTHESIS]->(antithesis:Thesis)
-OPTIONAL MATCH (at:Thesis)-[:ANTITHESIS]->(synthesis) // (+ optional all his antithesises)
-RETURN thesis, antithesis, synthesis, at
+    (selected)-[:THESIS_SYNTHESIS]->(synthesis_thesis:Thesis),
+    (selected)-[:ANTITHESIS_SYNTHESIS]->(synthesis_antithesis:Thesis)
+RETURN selected, antithesis_thesis, synthesis_thesis, synthesis_antithesis
 
 // list all, debug
 MATCH (t:Thesis) RETURN t

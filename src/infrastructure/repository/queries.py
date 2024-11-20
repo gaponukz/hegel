@@ -36,26 +36,12 @@ RETURN st.uuid AS thesis_id
 """
 
 
-GET_CREATE_THESIS_BY_ID = """
-MATCH (t:Thesis)
-WHERE t.uuid = $thesis_id
-OPTIONAL MATCH (antithesis:Thesis)-[:ANTITHESIS]->(t)
+GET_THESIS_BY_ID = """
+MATCH (selected:Thesis)
+WHERE selected.uuid = $thesis_id
+OPTIONAL MATCH (selected)-[:ANTITHESIS]->(antithesis_thesis:Thesis)
 OPTIONAL MATCH 
-    (t)-[:THESIS_SYNTHESIS]->(thesis:Thesis),
-    (t)-[:ANTITHESIS_SYNTHESIS]->(antithesis:Thesis)
-RETURN t, thesis, antithesis
+    (selected)-[:THESIS_SYNTHESIS]->(synthesis_thesis:Thesis),
+    (selected)-[:ANTITHESIS_SYNTHESIS]->(synthesis_antithesis:Thesis)
+RETURN selected, antithesis_thesis, synthesis_thesis, synthesis_antithesis
 """
-
-# MATCH (t:Thesis)
-# WHERE t.uuid = $thesis_id
-# OPTIONAL MATCH (baseThesis:Thesis)<-[:ANTITHESIS]-(t)
-# OPTIONAL MATCH (baseThesis)<-[:THESIS_SYNTHESIS]-(synthesis:Thesis),
-#                (baseThesis)<-[:ANTITHESIS_SYNTHESIS]-(t)
-# WITH
-#     CASE
-#         WHEN baseThesis IS NULL THEN t
-#         ELSE baseThesis
-#     END AS resolvedBaseThesis,
-#     synthesis
-# OPTIONAL MATCH (antithesis:Thesis)-[:ANTITHESIS]->(resolvedBaseThesis)
-# RETURN resolvedBaseThesis AS thesis, antithesis, synthesis
