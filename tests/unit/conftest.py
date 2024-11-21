@@ -53,14 +53,14 @@ class MemoryDialecticalGraphDialecticalGraph(DialecticalGraph):
             "rating": article.rating,
         }
 
-        if type(article) == ThesisArticle:
+        if not article.relations:
             return ThesisArticle(**kwargs)  # type: ignore
 
-        elif type(article) == AntithesisArticle:
+        elif len(article.relations) == 1:
             kwargs["refer_to"] = article.relations[0].to_id
             return AntithesisArticle(**kwargs)  # type: ignore
 
-        elif type(article) == SynthesisArticle:
+        elif len(article.relations) == 2:
             for rel in article.relations:
                 if rel.type == RelationType.THESIS_SYNTHESIS:
                     kwargs["thesis_id"] = rel.to_id
@@ -143,7 +143,7 @@ class MemoryDialecticalGraphDialecticalGraph(DialecticalGraph):
             and antithesis.relations[0].type == RelationType.ANTITHESIS
         )
 
-    def __contains__(self, article_id: int):
+    async def is_article_exists(self, article_id: str) -> bool:
         return article_id in self._data
 
 

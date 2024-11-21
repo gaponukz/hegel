@@ -4,6 +4,7 @@ from src.application.dto import (
     PublishArticleOutputDTO,
     Relation,
 )
+from src.application.errors import ArticleNotFoundError
 from src.application.persistent import UnitOfWork
 from src.application.usecases import PublishAntithesisArticleUseCase
 from src.domain.value_objects import RelationType
@@ -16,6 +17,9 @@ class PublishAntithesis(PublishAntithesisArticleUseCase):
     async def __call__(
         self, dto: PublishAntithesisArticleInputDTO
     ) -> PublishArticleOutputDTO:
+        if not await self._uow.repository.is_article_exists(dto.refer_to):
+            raise ArticleNotFoundError(dto.refer_to)
+
         article_id = await self._uow.repository.add_article(
             CreateArticle(
                 author_id=dto.author_id,

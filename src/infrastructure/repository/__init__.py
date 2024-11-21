@@ -147,6 +147,15 @@ class Neo4jThesisRepository(DialecticalGraph):
 
         return record is not None and record["exists"]
 
+    async def is_article_exists(self, article_id: str) -> bool:
+        result = await self._session.run(
+            queries.CHECK_THESIS_EXISTS,
+            thesis_id=article_id,
+        )
+        record = await result.single()
+
+        return record is not None and record["exists"]
+
     @classmethod
     def _get_article_type_from_relations(cls, relations: list[Relation]) -> ArticleType:
         if not relations:

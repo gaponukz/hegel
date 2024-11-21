@@ -59,3 +59,9 @@ RETURN EXISTS {
     MATCH (antithesis:Thesis {uuid: $antithesis_id})-[:ANTITHESIS]->(thesis:Thesis {uuid: $thesis_id})
 } AS exists
 """
+
+CHECK_THESIS_EXISTS = """
+RETURN EXISTS {
+    MATCH (t:Thesis) WHERE t.uuid = $thesis_id
+} AS exists
+"""
