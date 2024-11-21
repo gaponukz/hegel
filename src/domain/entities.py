@@ -12,7 +12,7 @@ class ThesisArticle:
 
 @dataclasses.dataclass
 class AntithesisArticle(ThesisArticle):
-    refer_to: str
+    thesis_id: str
 
 
 @dataclasses.dataclass

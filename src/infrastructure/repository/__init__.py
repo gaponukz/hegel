@@ -186,7 +186,7 @@ class Neo4jThesisRepository(DialecticalGraph):
 
         if record["antithesis_thesis"] is not None:
             atype = ArticleType.ANTITHESIS
-            kwargs["refer_to"] = record["antithesis_thesis"]["uuid"]
+            kwargs["thesis_id"] = record["antithesis_thesis"]["uuid"]
 
         elif (
             record["synthesis_thesis"] is not None

@@ -7,9 +7,9 @@ from src.application.interactors.publish_antithesis import PublishAntithesis
 
 async def test_thesis_not_exist(uow):
     publish_thesis = PublishAntithesis(uow)
-    refer_to = "0"
+    thesis_id = "0"
 
-    assert not await uow.repository.is_article_exists(refer_to)
+    assert not await uow.repository.is_article_exists(thesis_id)
 
     with pytest.raises(ArticleNotFoundError):
         await publish_thesis(
@@ -17,7 +17,7 @@ async def test_thesis_not_exist(uow):
                 author_id=1,
                 title="A",
                 text="aaa",
-                refer_to=refer_to,
+                thesis_id=thesis_id,
             )
         )
 
@@ -32,7 +32,7 @@ async def test_ok(uow):
         author_id=1,
         title="A",
         text="aaa",
-        refer_to=thesis_id,
+        thesis_id=thesis_id,
     )
 
     out = await publish_thesis(article)
@@ -41,5 +41,5 @@ async def test_ok(uow):
     assert thesis.author_id == article.author_id
     assert thesis.title == article.title
     assert thesis.text == article.text
-    assert thesis.refer_to == thesis_id
+    assert thesis.thesis_id == thesis_id
     assert thesis.rating == 0

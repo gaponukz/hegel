@@ -57,7 +57,7 @@ class MemoryDialecticalGraphDialecticalGraph(DialecticalGraph):
             return ThesisArticle(**kwargs)  # type: ignore
 
         elif len(article.relations) == 1:
-            kwargs["refer_to"] = article.relations[0].to_id
+            kwargs["thesis_id"] = article.relations[0].to_id
             return AntithesisArticle(**kwargs)  # type: ignore
 
         elif len(article.relations) == 2:
@@ -90,7 +90,7 @@ class MemoryDialecticalGraphDialecticalGraph(DialecticalGraph):
             return output
 
         if isinstance(article, AntithesisArticle):
-            thesis = await self.get_article(article_id=article.refer_to)
+            thesis = await self.get_article(article_id=article.thesis_id)
             output.relations.append(
                 ViewArticleRelation(
                     to_id=thesis.id,
@@ -150,8 +150,10 @@ class MemoryDialecticalGraphDialecticalGraph(DialecticalGraph):
 class MemoryUnitOfWork(UnitOfWork):
     def __init__(self):
         self._repository = MemoryDialecticalGraphDialecticalGraph()
+        self.executed_in_transaction = False
 
     async def __aenter__(self):
+        self.executed_in_transaction = True
         return self
 
     async def __aexit__(self, *args):

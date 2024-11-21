@@ -25,7 +25,7 @@ class PublishThesisArticleInputDTO(_BasePublishArticleInputDTO):
 
 @dataclasses.dataclass
 class PublishAntithesisArticleInputDTO(_BasePublishArticleInputDTO):
-    refer_to: str
+    thesis_id: str
 
 
 @dataclasses.dataclass

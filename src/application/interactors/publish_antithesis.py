@@ -17,15 +17,15 @@ class PublishAntithesis(PublishAntithesisArticleUseCase):
     async def __call__(
         self, dto: PublishAntithesisArticleInputDTO
     ) -> PublishArticleOutputDTO:
-        if not await self._uow.repository.is_article_exists(dto.refer_to):
-            raise ArticleNotFoundError(dto.refer_to)
+        if not await self._uow.repository.is_article_exists(dto.thesis_id):
+            raise ArticleNotFoundError(dto.thesis_id)
 
         article_id = await self._uow.repository.add_article(
             CreateArticle(
                 author_id=dto.author_id,
                 title=dto.title,
                 text=dto.text,
-                relations=[Relation(to_id=dto.refer_to, type=RelationType.ANTITHESIS)],
+                relations=[Relation(to_id=dto.thesis_id, type=RelationType.ANTITHESIS)],
             )
         )
 
