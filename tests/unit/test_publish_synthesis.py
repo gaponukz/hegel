@@ -2,27 +2,25 @@ import pytest
 
 from src.application.dto import CreateArticle, PublishSynthesisArticleInputDTO, Relation
 from src.application.errors import ApplicationError
-from src.application.interactors.publish_synthesis import PublishSynthesis
+from src.application.interactors import publish_synthesis
 from src.domain.value_objects import RelationType
 
 
 async def test_thesis_is_antithesis(uow):
-    publish_thesis = PublishSynthesis(uow)
-
     with pytest.raises(ApplicationError):
-        await publish_thesis(
+        await publish_synthesis(
+            uow,
             PublishSynthesisArticleInputDTO(
                 author_id=1,
                 title="A",
                 text="aaa",
                 thesis_id="0",
                 antithesis_id="0",
-            )
+            ),
         )
 
 
 async def test_have_not_antithesis_relations(uow):
-    publish_thesis = PublishSynthesis(uow)
     thesis_id1 = await uow.repository.add_article(
         CreateArticle(author_id=0, title="B", text="bbb", relations=[])
     )
@@ -40,11 +38,10 @@ async def test_have_not_antithesis_relations(uow):
     )
 
     with pytest.raises(ApplicationError):
-        await publish_thesis(article)
+        await publish_synthesis(uow, article)
 
 
 async def test_ok(uow):
-    publish_thesis = PublishSynthesis(uow)
     thesis_id = await uow.repository.add_article(
         CreateArticle(author_id=0, title="B", text="bbb", relations=[])
     )
@@ -66,7 +63,7 @@ async def test_ok(uow):
         antithesis_id=antithesis_id,
     )
 
-    out = await publish_thesis(article)
+    out = await publish_synthesis(uow, article)
     thesis = await uow.repository.get_article(out.id)
 
     assert thesis.author_id == article.author_id

@@ -22,7 +22,7 @@ jobs:
         pip install -r requirements.txt
 
     - name: Run mypy
-      run: mypy src tests --explicit-package-bases --ignore-missing-imports
+      run: mypy src tests app.py --explicit-package-bases --ignore-missing-imports
       
     - name: Run pytest
       run: python -m pytest tests/unit
