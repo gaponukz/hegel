@@ -3,6 +3,7 @@ import typing
 
 from fastapi import FastAPI, HTTPException, Request
 from neo4j import AsyncGraphDatabase
+from pydantic import BaseModel
 
 from config import config
 from src.application import dto, interactors
@@ -69,17 +70,13 @@ async def publish_article(
     return await publish(request.app.uow, data)
 
 
+class RataArticleModel(BaseModel):
+    is_positive: bool
+
+
 @app.post("/rate/{article_id}")
-async def rate_article(request: Request, article_id: str):
-    data = await request.json()
-
-    if not isinstance(data, dict) or "is_positive" not in data:
-        raise HTTPException(status_code=400, detail="Miss 'is_positive'")
-
+async def rate_article(request: Request, article_id: str, data: RataArticleModel):
     await interactors.rate_article(
         request.app.uow,
-        dto.RateArticleInputDTO(
-            article_id=article_id,
-            is_positive=data["is_positive"],
-        ),
+        dto.RateArticleInputDTO(article_id=article_id, is_positive=data.is_positive),
     )

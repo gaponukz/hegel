@@ -1,6 +1,6 @@
 import typing
 
-from neo4j import AsyncSession, AsyncTransaction, Record
+from neo4j import AsyncResult, AsyncSession, AsyncTransaction, Record
 
 from src.application.dto import (
     AllThesises,
@@ -17,8 +17,12 @@ from src.domain.value_objects import ArticleType, RelationType
 from src.infrastructure.repository import queries
 
 
+class Session(typing.Protocol):
+    async def run(self, query: str, **kwargs) -> AsyncResult: ...
+
+
 class Neo4jThesisRepository(DialecticalGraph):
-    def __init__(self, session: AsyncSession):
+    def __init__(self, session: Session):
         self._session = session
 
     async def add_article(self, dto: CreateArticle) -> str:
@@ -207,11 +211,14 @@ class Neo4jThesisUnitOfWork(UnitOfWork):
 
     async def __aenter__(self) -> UnitOfWork:
         self._transaction = await self._session.begin_transaction()
+        self._repository = Neo4jThesisRepository(self._transaction)
         return self
 
     async def __aexit__(self, exc_type, exc_value, traceback):
         if self._transaction is None:
             return
+
+        self._repository = Neo4jThesisRepository(self._session)
 
         if exc_type is None:
             await self._transaction.commit()
