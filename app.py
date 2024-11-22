@@ -6,11 +6,25 @@ from neo4j import AsyncGraphDatabase
 from pydantic import BaseModel
 
 from config import config
-from src.application import dto, interactors
+from src.application import dto
+from src.application import interactors as services
 from src.application.persistent import UnitOfWork
 from src.domain.value_objects import ArticleType
 from src.infrastructure.controllers.middleware import ErrorHandlingMiddleware
+from src.infrastructure.logger import log_interactor
 from src.infrastructure.repository import Neo4jThesisUnitOfWork
+
+
+class InteractorsFactory:
+    def __init__(self):
+        self.get_article = log_interactor(services.get_article)
+        self.publish_thesis = log_interactor(services.publish_thesis)
+        self.publish_antithesis = log_interactor(services.publish_antithesis)
+        self.publish_synthesis = log_interactor(services.publish_synthesis)
+        self.rate_article = log_interactor(services.rate_article)
+
+
+interactors = InteractorsFactory()
 
 
 @contextlib.asynccontextmanager
