@@ -10,7 +10,10 @@ from src.application import dto
 from src.application import interactors as services
 from src.application.persistent import UnitOfWork
 from src.domain.value_objects import ArticleType
-from src.infrastructure.controllers.middleware import ErrorHandlingMiddleware
+from src.infrastructure.controllers.middleware import (
+    ErrorHandlingMiddleware,
+    TokenAuthMiddleware,
+)
 from src.infrastructure.logger import log_interactor
 from src.infrastructure.repository import Neo4jThesisUnitOfWork
 
@@ -38,6 +41,7 @@ async def lifespan(app: FastAPI):
 
 
 app = FastAPI(lifespan=lifespan)
+app.add_middleware(TokenAuthMiddleware, token=config.token)
 app.add_middleware(ErrorHandlingMiddleware)
 
 

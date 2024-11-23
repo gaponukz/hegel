@@ -6,6 +6,7 @@ class AppConfig(BaseSettings):
     neo4j_uri: str
     neo4j_user: str
     neo4j_password: str
+    token: str
 
 
 config = AppConfig()  # type: ignore
