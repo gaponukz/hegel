@@ -1,7 +1,7 @@
-import contextlib
 import typing
+from contextlib import asynccontextmanager
 
-from fastapi import FastAPI, HTTPException, Request
+from fastapi import Depends, FastAPI, HTTPException
 from neo4j import AsyncGraphDatabase
 from pydantic import BaseModel
 
@@ -28,16 +28,15 @@ class InteractorsFactory:
 
 
 interactors = InteractorsFactory()
+driver = AsyncGraphDatabase.driver(
+    config.neo4j_uri, auth=(config.neo4j_user, config.neo4j_password)
+)
 
 
-@contextlib.asynccontextmanager
+@asynccontextmanager
 async def lifespan(app: FastAPI):
-    async with AsyncGraphDatabase.driver(
-        config.neo4j_uri, auth=(config.neo4j_user, config.neo4j_password)
-    ) as driver:
-        async with driver.session(database="neo4j") as session:
-            app.uow = Neo4jThesisUnitOfWork(session)  # type: ignore
-            yield
+    yield
+    await driver.close()
 
 
 app = FastAPI(lifespan=lifespan)
@@ -45,13 +44,20 @@ app.add_middleware(TokenAuthMiddleware, token=config.token)
 app.add_middleware(ErrorHandlingMiddleware)
 
 
+async def get_uow():
+    async with driver.session(database=config.neo4j_database) as session:
+        yield Neo4jThesisUnitOfWork(session)
+
+
 @app.get("/view/{article_type}/{article_id}", response_model=dto.GetArticleOutputDTO)
-async def view_article(request: Request, article_type: str, article_id: str):
+async def view_article(
+    article_type: str, article_id: str, uow: UnitOfWork = Depends(get_uow)
+):
     if article_type.upper() not in ArticleType:
         raise HTTPException(status_code=400, detail="Incorrect article type")
 
     return await interactors.get_article(
-        request.app.uow,
+        uow,
         dto.GetArticleInputDTO(
             article_id=article_id,
             article_type=ArticleType[article_type.upper()],
@@ -61,12 +67,12 @@ async def view_article(request: Request, article_type: str, article_id: str):
 
 @app.post("/publish", response_model=dto.PublishArticleOutputDTO)
 async def publish_article(
-    request: Request,
     data: typing.Union[
         dto.PublishThesisArticleInputDTO,
         dto.PublishAntithesisArticleInputDTO,
         dto.PublishSynthesisArticleInputDTO,
     ],
+    uow: UnitOfWork = Depends(get_uow),
 ):
     D = typing.TypeVar("D")
 
@@ -85,7 +91,7 @@ async def publish_article(
 
     publish = get_interactor(type(data))
 
-    return await publish(request.app.uow, data)
+    return await publish(uow, data)
 
 
 class RataArticleModel(BaseModel):
@@ -93,8 +99,10 @@ class RataArticleModel(BaseModel):
 
 
 @app.post("/rate/{article_id}")
-async def rate_article(request: Request, article_id: str, data: RataArticleModel):
+async def rate_article(
+    article_id: str, data: RataArticleModel, uow: UnitOfWork = Depends(get_uow)
+):
     await interactors.rate_article(
-        request.app.uow,
+        uow,
         dto.RateArticleInputDTO(article_id=article_id, is_positive=data.is_positive),
     )
