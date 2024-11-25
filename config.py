@@ -1,3 +1,5 @@
+import typing
+
 from pydantic_settings import BaseSettings
 
 
@@ -7,7 +9,7 @@ class AppConfig(BaseSettings):
     neo4j_database: str
     neo4j_user: str
     neo4j_password: str
-    token: str
+    token: typing.Optional[str] = None
 
 
 config = AppConfig()  # type: ignore

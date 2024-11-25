@@ -40,7 +40,8 @@ async def lifespan(app: FastAPI):
 
 
 app = FastAPI(lifespan=lifespan)
-app.add_middleware(TokenAuthMiddleware, token=config.token)
+if config.token is not None:
+    app.add_middleware(TokenAuthMiddleware, token=config.token)
 app.add_middleware(ErrorHandlingMiddleware)
 
 
